@@ -7,27 +7,48 @@ from .models import Carusers
 # Create your views here.
 
 def index(request):
-	template = loader.get_template('login/index.html')
 	if 'email_id' not in request.session:
-		username = "not in"
+		return HttpResponseRedirect(reverse('login:signin'))
 	else:
 		username = request.session['email_id']
-	#return HttpResponse(template.render())
-	return HttpResponse(username)
+	return render(request, 'login/index.html')
 
 def signin(request):
 	if 'email_id' in request.session:
+		if(request.session['email_id'] is None):
+			del request.session['email_id']
+		else:
+			return HttpResponseRedirect(reverse('login:index'))
+	#template = loader.get_template('login/signin.html')
+	return render(request, 'login/signin.html')
+
+def signout(request):
+	if 'email_id' in request.session:
 		del request.session['email_id']
-	template = loader.get_template('login/signin.html')
-	return render(request, 'signin.html')
+	return HttpResponseRedirect(reverse('login:signin'))
 
 def signup(request):
 	template = loader.get_template('login/signup.html')
-	return HttpResponse(template.render())
+	return render(request, 'login/signup.html')
 
 def authenticate(request):
 	email_id = request.POST.get("email_id", "")
 	password = request.POST.get("password", "")
-	p = get_object_or_404(Carusers, email_id=email_id)
-	request.session['email_id'] = email_id
-	return HttpResponseRedirect(reverse('login:index'))
+	try:
+		p = Carusers.objects.get(email_id = email_id, password = password)
+	except Carusers.DoesNotExist:
+		p = None
+	if p is not None:
+		request.session['email_id'] = p.name
+		return HttpResponseRedirect(reverse('login:index'))
+	else:
+		request.session['email_id'] = None
+		return HttpResponseRedirect(reverse('login:signin'))
+
+def createuser(request):
+	name = request.POST.get("name", "")
+	email_id = request.POST.get("email_id", "")
+	password = request.POST.get("password", "")
+	q = Carusers(name = name, email_id = email_id, password = password)
+	q.save()
+	return HttpResponseRedirect(reverse('login:signin'))

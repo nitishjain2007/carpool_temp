@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+<head>
+	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="{% static "routes/js/jquery-ui.min.js" %}"></script>
+	<script src="{% static "routes/js/jquery-ui.multidatespicker.js" %}"></script>
+	<script src="{% static "routes/js/jquery.ui.timepicker.js" %}"></script>
+	<link rel="stylesheet" href="{% static "routes/css/jquery-ui.min.css" %}">
+	<link rel="stylesheet" href="{% static "routes/css/jquery-ui.theme.min.css" %}">
+	<link rel="stylesheet" href="{% static "routes/css/jquery.ui.timepicker.css" %}">
+	<script>
+	function initialize1(){
+		var defaultBounds = new google.maps.LatLngBounds(
+			new google.maps.LatLng(28.459496500000000000, 77.026638300000060000)
+			);
+		var input1 = document.getElementById('start');
+		var options = {
+			bounds: defaultBounds,
+			componentRestrictions: {country: 'in'}
+		};
+		var autocomplete1 = new google.maps.places.Autocomplete(input1, options);
+		google.maps.event.addListener(autocomplete1, 'place_changed', function () {
+		            var place = autocomplete1.getPlace();
+		            document.getElementById('startlat').value = place.geometry.location.lat();
+		            document.getElementById('startlong').value = place.geometry.location.lng();
+		            makeroutecheck();
+		        });
+	}
+	google.maps.event.addDomListener(window, 'load', initialize1);
+	function initialize2(){
+		var defaultBounds = new google.maps.LatLngBounds(
+			new google.maps.LatLng(28.459496500000000000, 77.026638300000060000)
+			);
+		var input2 = document.getElementById('end');
+		var options = {
+			bounds: defaultBounds,
+			componentRestrictions: {country: 'in'}
+		};
+		var autocomplete2 = new google.maps.places.Autocomplete(input2, options);
+		google.maps.event.addListener(autocomplete2, 'place_changed', function () {
+		            var place = autocomplete2.getPlace();
+		            document.getElementById('endlat').value = place.geometry.location.lat();
+		            document.getElementById('endlong').value = place.geometry.location.lng();
+		            makeroutecheck();
+		        });
+	}
+	google.maps.event.addDomListener(window, 'load', initialize2);
+	function makeroutecheck(){
+		a = document.getElementById("startlong").value;
+	  	b = document.getElementById("startlat").value;
+	  	c = document.getElementById("endlong").value;
+	  	d = document.getElementById("endlat").value;
+	  	console.log(a);
+	  	console.log(b);
+	  	console.log(c);
+	  	console.log(d);
+	  	if(a != '' && b != '' && c != '' && d != ''){
+	  		makeroutemap();
+	  	}
+	}
+    function makemapinit() {
+    	var mapOptions = {
+            center: new google.maps.LatLng('28.4', '77.2'),
+            zoom: 10,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+    }
+    window.onload = makemapinit;
+    function makeroutemap() {
+    	var coods = [];
+    	var markers = [
+            {
+                "title": 'Start Point',
+                "lat": document.getElementById('startlat').value,
+                "lng": document.getElementById('startlong').value,
+                "description": document.getElementById('start').value
+            }
+        ,
+            {
+                "title": 'End Point',
+                "lat": document.getElementById('endlat').value,
+                "lng": document.getElementById('endlong').value,
+                "description": document.getElementById('end').value
+            }
+    	];
+        var mapOptions = {
+            center: new google.maps.LatLng(markers[0].lat, markers[0].lng),
+            zoom: 10,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+        var infoWindow = new google.maps.InfoWindow();
+        var lat_lng = new Array();
+        var latlngbounds = new google.maps.LatLngBounds();
+        for (i = 0; i < markers.length; i++) {
+            var data = markers[i]
+            var myLatlng = new google.maps.LatLng(data.lat, data.lng);
+            lat_lng.push(myLatlng);
+            var marker = new google.maps.Marker({
+                position: myLatlng,
+                map: map,
+                title: data.title
+            });
+            latlngbounds.extend(marker.position);
+            (function (marker, data) {
+                google.maps.event.addListener(marker, "click", function (e) {
+                    infoWindow.setContent(data.description);
+                    infoWindow.open(map, marker);
+                });
+            })(marker, data);
+        }
+        map.setCenter(latlngbounds.getCenter());
+        map.fitBounds(latlngbounds);
+
+        //***********ROUTING****************//
+ 
+        //Initialize the Path Array
+        var path = new google.maps.MVCArray();
+        //Initialize the Direction Service
+        var service = new google.maps.DirectionsService();
+        //Set the Path Stroke Color
+        var poly = new google.maps.Polyline({ map: map, strokeColor: '#4986E7' });
+        //Loop and Draw Path Route between the Points on MAP
+        for (var i = 0; i < lat_lng.length; i++) {
+            if ((i + 1) < lat_lng.length) {
+                var src = lat_lng[i];
+                var des = lat_lng[i + 1];
+                path.push(src);
+                poly.setPath(path);
+                service.route({
+                    origin: src,
+                    destination: des,
+                    travelMode: google.maps.DirectionsTravelMode.DRIVING
+                }, function (result, status) {
+                    if (status == google.maps.DirectionsStatus.OK) {
+                        for (var i = 0, len = result.routes[0].overview_path.length; i < len; i++) {
+                            path.push(result.routes[0].overview_path[i]);
+                            var newcood = {lat: result.routes[0].overview_path[i].A, lng: result.routes[0].overview_path[i].F}
+                            coods.push(newcood);
+                            console.log(result.routes[0].overview_path[i].A);
+                            console.log(coods);
+                        }
+                    }
+                });
+            }
+        }
+    }
+    $(function() {
+    	$('#datepicker').multiDatesPicker({ minDate: 0 });
+  	});
+  	$(function() {
+  		var d = new Date();
+  		$('#timepicker').timepicker({
+  			minTime: {                    // Set the minimum time selectable by the user, disable hours and minutes
+        		hour: d.getHours(),            // previous to min time
+        		minute: d.getMinutes(),
+    		},
+  		});
+  	});
+	</script>
+</head>
+<body>
+	<input id="start" class="form-control" placeholder="Start Point" type="text" style="float: left;width: 60%;">
+	<br>
+	<input id="end" class="form-control" placeholder="End Point" type="text" style="float: left;width: 60%;">
+	<br>
+	<br>
+	<input type="hidden" id="startlat" />
+	<input type="hidden" id="startlong" />
+	<input type="hidden" id="endlat" />
+	<input type="hidden" id="endlong" />
+	<div id="map_canvas" style="width:700px; height:500px; border: 5px solid #000;"></div>
+	<br>
+	<input id="datepicker" placeholder="Select Dates" />
+	<br>
+	<input id="timepicker" placeholder="Select Time" />  
+</body>
+</html>
