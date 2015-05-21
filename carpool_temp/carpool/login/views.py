@@ -39,7 +39,8 @@ def authenticate(request):
 	except Carusers.DoesNotExist:
 		p = None
 	if p is not None:
-		request.session['email_id'] = p.name
+		request.session['email_id'] = email_id
+		request.session['name'] = p.name
 		return HttpResponseRedirect(reverse('login:index'))
 	else:
 		request.session['email_id'] = None
