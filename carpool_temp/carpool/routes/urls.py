@@ -6,4 +6,5 @@ urlpatterns = [
     url(r'^postride/', views.postride, name='postride'),
     url(r'^getride/', views.getride, name='getride'),
     url(r'^createride/', views.createride, name='createride'),
+    url(r'^retrieveride/', views.retrieveride, name='retrieveride'),
 ]

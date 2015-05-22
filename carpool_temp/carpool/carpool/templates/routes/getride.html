@@ -1,4 +1,48 @@
 <!DOCTYPE html>
 {% load staticfiles %}
 <html>
+<head>
+	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="{% static "routes/js/jquery-ui.min.js" %}"></script>
+	<script src="{% static "routes/js/jquery-ui.multidatespicker.js" %}"></script>
+	<script src="{% static "routes/js/jquery.ui.timepicker.js" %}"></script>
+	<script src="{% static "routes/js/google_location_bar.js" %}"></script>
+	<script src="{% static "routes/js/datetimepicker_script.js" %}"></script>
+	<link rel="stylesheet" href="{% static "routes/css/jquery-ui.min.css" %}">
+	<link rel="stylesheet" href="{% static "routes/css/jquery-ui.theme.min.css" %}">
+	<link rel="stylesheet" href="{% static "routes/css/jquery.ui.timepicker.css" %}">
+</head>
+<body>
+	<input id="start" class="form-control" placeholder="Start Point" type="text" style="float: left;width: 60%;">
+	<br>
+	<input id="end" class="form-control" placeholder="End Point" type="text" style="float: left;width: 60%;">
+	<br>
+	<form action="{% url 'routes:retrieveride' %}" method="post">
+	{% csrf_token %}
+	<input type="hidden" id="startlat" name="startlat"/>
+	<input type="hidden" id="startlong" name="startlong"/>
+	<input type="hidden" id="endlat" name="endlat"/>
+	<input type="hidden" id="endlong" name="endlong"/>
+	<br>
+	<input id="datepicker" placeholder="Select Dates" name="date"/>
+	<br>
+	<input id="timepicker" placeholder="Select Time" name="time"/>
+    <br>
+    Please let us know how much can you manage by yourself:
+	<select>
+		<option value="1">1 Km</option>
+		<option value="2">2 Km</option>
+		<option value="3">3 Km</option>
+		<option value="4">4 Km</option>
+		<option value="5">5 Km</option>
+		<option value="6">6 Km</option>
+		<option value="7">7 Km</option>
+		<option value="8">8 Km</option>
+		<option value="9">9 Km</option>
+		<option value="10">10 Km</option>
+	</select>
+	<br>
+	<input type="submit" value="Find me Rides" />
+</body>
 </html>
