@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect, HttpResponse
-from django.template import RequestContext, loader
+from django.template import RequestContext, loader, Context
 from django.core.urlresolvers import reverse
 from login.models import Carusers
 from .models import Pools, Route
@@ -29,18 +29,25 @@ def createride(request):
 	time = datetime.datetime.strptime(time, '%H:%M').time()
 	user = Carusers.objects.get(email_id = request.session['email_id'])
 	try:
-		p = Route.objects.get(startlat = startlat, endlat = endlat, startlong = startlong, endlong = endlong)
-		routeid = p.id
+		p = Route.objects.get(endlat__range = (endlat - 0.0000000001, endlat + 0.0000000001), startlat__range = (startlat - 0.0000000001, startlat + 0.0000000001), endlong__range = (endlong - 0.0000000001, endlong + 0.0000000001), startlong__range = (startlong - 0.0000000001, startlong + 0.0000000001))
+		route = p
+		route_reverse = False
 	except Route.DoesNotExist:
-		p = Route(lats = latstr, longs = longstr, startlat = startlat, endlat = endlat, startlong = startlong, endlong = endlong, minlat = minlat, maxlat = maxlat, minlong = minlong, maxlong = maxlong, timereq = timereq)
-		p.save()
-		routeid = p.id
+		try:
+			p = Route.objects.get(startlat__range = (endlat - 0.0000000001, endlat + 0.0000000001), endlat__range = (startlat - 0.0000000001, startlat + 0.0000000001), startlong__range = (endlong - 0.0000000001, endlong + 0.0000000001), endlong__range = (startlong - 0.0000000001, startlong + 0.0000000001))
+			route = p
+			route_reverse = True
+		except Route.DoesNotExist:
+			p = Route(lats = latstr, longs = longstr, startlat = startlat, endlat = endlat, startlong = startlong, endlong = endlong, minlat = minlat, maxlat = maxlat, minlong = minlong, maxlong = maxlong, timereq = timereq)
+			p.save()
+			routeid = p
+			route_reverse = False
 	for date in dates:
 		datereq = date[:6] + date[8:]
 		datereq = datetime.datetime.strptime(datereq, '%m/%d/%y').date()
-		q = Pools(time = time, date = datereq, routeid = routeid, user = user)
+		q = Pools(time = time, date = datereq, route = p, user = user, route_reverse = route_reverse)
 		q.save()
-	return HttpResponse("Your rides created successfully :). Now wait :P")
+	return HttpResponse(type(startlat))
 
 def getride(request):
 	return render(request, 'routes/getride.html')
@@ -60,7 +67,9 @@ def retrieveride(request):
 	q1 = Route.objects.filter(minlat__lte = startlat + 0.005, maxlat__gte = startlat - 0.005, minlong__lte = startlong + 0.005, maxlong__gte = startlong - 0.005)
 	q2 = q1.filter(minlat__lte = endlat + 0.005, maxlat__gte = endlat - 0.005, minlong__lte = endlong + 0.005, maxlong__gte = endlong - 0.005)
 	routes = []
-	routetimes = []
+	routeids = []
+	startmatchlist = []
+	endmatchlist = []
 	for objects in q2:
 		lats = objects.lats
 		longs = objects.longs
@@ -81,6 +90,37 @@ def retrieveride(request):
 		endmatch = set(longmatchend1)&set(longmatchend2)&set(latmatchend1)&set(latmatchend2)
 		endmatch = list(endmatch)
 		if(len(startmatch) and len(endmatch)):
-			routes.append(objects.id)
-			routetimes.append(objects.timereq)
-	return HttpResponse(routes)	
+			routes.append(objects)
+			routeids.append(objects.id)
+			startmatchlist.append(startmatch)
+			endmatchlist.append(endmatch)
+	try:
+		results = Pools.objects.filter(route__in = routes)
+	except Pools.DoesNotExist:
+		results = []
+	finalresult = []
+	dummyhalfhour = datetime.timedelta(seconds=1800)
+	for i in range(len(results)):
+		indexinmatches = routeids.index(results[i].route.id)
+		if(results[i].route_reverse):
+			if(startmatchlist[indexinmatches][0] >= endmatchlist[indexinmatches][0]):
+				finalresult.append(results[i])
+		else:
+			if(startmatchlist[indexinmatches][0] <= endmatchlist[indexinmatches][0]):
+				finalresult.append(results[i])
+	finalresult1 = []
+	for objects in finalresult:
+		timereq = objects.route.timereq
+		timereq = datetime.timedelta(seconds=timereq)
+		print time
+		print (datetime.datetime.combine(datetime.date(1,1,1),time) - timereq).time()
+		print (datetime.datetime.combine(datetime.date(1,1,1),time) + timereq).time()
+		print datereq
+		print objects.date
+		if datereq == objects.date:
+			print "yes"
+			if time >= (datetime.datetime.combine(datetime.date(1,1,1),time) - dummyhalfhour).time() and \
+			time <= (datetime.datetime.combine(datetime.date(1,1,1),time) + timereq + dummyhalfhour).time():
+				finalresult1.append(objects)
+	context = {'results': finalresult1}
+	return render(request, 'routes/showrides.html', context)

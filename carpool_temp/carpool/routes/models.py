@@ -2,12 +2,6 @@ from django.db import models
 from login.models import Carusers
 
 # Create your models here.
-class Pools(models.Model):
-	time = models.TimeField()
-	date = models.DateField()
-	routeid = models.IntegerField()
-	user = models.ForeignKey(Carusers)
-
 class Route(models.Model):
 	lats = models.TextField()
 	longs = models.TextField()
@@ -20,3 +14,10 @@ class Route(models.Model):
 	maxlat = models.DecimalField(max_digits=15, decimal_places=12)
 	minlong = models.DecimalField(max_digits=15, decimal_places=12)
 	maxlong = models.DecimalField(max_digits=15, decimal_places=12)
+
+class Pools(models.Model):
+	time = models.TimeField()
+	date = models.DateField()
+	route = models.ForeignKey(Route)
+	route_reverse = models.BooleanField()
+	user = models.ForeignKey(Carusers)
