@@ -14,6 +14,12 @@
 	<link rel="stylesheet" href="{% static "routes/css/jquery.ui.timepicker.css" %}">
 </head>
 <body>
-{{ results }}
+{% for objects in results %}
+{{ objects.route.id }}
+<br>
+{% endfor %}
+{% for i in pagerange %}
+<a href="{% url 'routes:retrieveride' i %}">{{ i }}</a>
+{% endfor %}
 </body>
 </html>
