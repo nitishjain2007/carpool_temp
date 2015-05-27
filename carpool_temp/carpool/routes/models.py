@@ -1,5 +1,5 @@
 from django.db import models
-from login.models import Carusers
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Route(models.Model):
@@ -20,4 +20,4 @@ class Pools(models.Model):
 	date = models.DateField()
 	route = models.ForeignKey(Route)
 	route_reverse = models.BooleanField()
-	user = models.ForeignKey(Carusers)
+	user = models.ForeignKey(User)

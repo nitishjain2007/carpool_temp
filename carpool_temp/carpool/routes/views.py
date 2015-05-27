@@ -3,15 +3,23 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.template import RequestContext, loader, Context
 from django.core.urlresolvers import reverse
 from django.core.cache import cache
-from login.models import Carusers
 from .models import Pools, Route
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 import socket
 import hashlib
 import datetime
 # Create your views here.
+
+@login_required
+def dummy(request):
+	return HttpResponse(request.user)
+
+@login_required
 def postride(request):
 	return render(request, 'routes/postride.html')
 
+@login_required
 def createride(request):
 	startlat = float(request.POST.get("startlat", ""))
 	startlong = float(request.POST.get("startlong", ""))
@@ -30,7 +38,7 @@ def createride(request):
 	dates = dates.split(", ")
 	time = request.POST.get("time", "")
 	time = datetime.datetime.strptime(time, '%H:%M').time()
-	user = Carusers.objects.get(email_id = request.session['email_id'])
+	user = request.user
 	try:
 		p = Route.objects.get(endlat__range = (endlat - 0.0000000001, endlat + 0.0000000001), startlat__range = (startlat - 0.0000000001, startlat + 0.0000000001), endlong__range = (endlong - 0.0000000001, endlong + 0.0000000001), startlong__range = (startlong - 0.0000000001, startlong + 0.0000000001))
 		route = p
@@ -52,9 +60,11 @@ def createride(request):
 		q.save()
 	return HttpResponse(type(startlat))
 
+@login_required
 def getride(request):
 	return render(request, 'routes/getride.html')
 
+@login_required
 def retrieveride(request,page_id=1):
 	ip = [(s.connect(('8.8.8.8', 80)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
 	if "startlat" in request.POST:
