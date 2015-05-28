@@ -8,5 +8,5 @@ urlpatterns = [
     url(r'^createride/', views.createride, name='createride'),
     url(r'^retrieveride/(?P<page_id>[0-9]+)/', views.retrieveride, name='retrieveride'),
     url(r'^retrieveride/', views.retrieveride, name='retrieveride'),
-    url(r'^dummy/', views.dummy, name='dummy'),
+    url(r'^retrieverequiredrides/', views.retrieverequiredrides, name='retrieverequiredrides'),
 ]

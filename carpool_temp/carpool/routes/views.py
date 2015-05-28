@@ -6,11 +6,13 @@ from django.core.cache import cache
 from .models import Pools, Route
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
 import socket
 import hashlib
 import datetime
 # Create your views here.
 
+latlongs = []
 @login_required
 def dummy(request):
 	return HttpResponse(request.user)
@@ -64,6 +66,15 @@ def createride(request):
 def getride(request):
 	return render(request, 'routes/getride.html')
 
+@ensure_csrf_cookie
+def retrieverequiredrides(request):
+	page_id = int(request.GET.get("page", ""))
+	print page_id
+	ridereq = cache.get('recentridesearched')
+	cache.get(ridereq)[(page_id - 1)*3:(page_id - 1)*3 + 3]
+	context = {'results': cache.get(ridereq)[(page_id - 1)*3:(page_id - 1)*3 + 3]}
+	return render(request, 'routes/displayrequiredroutes.html', context)
+
 @login_required
 def retrieveride(request,page_id=1):
 	ip = [(s.connect(('8.8.8.8', 80)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
@@ -76,6 +87,12 @@ def retrieveride(request,page_id=1):
 			startlong = float(request.POST.get("startlong", ""))
 			endlat = float(request.POST.get("endlat", ""))
 			endlong = float(request.POST.get("endlong", ""))
+			global latlongs
+			latlongs = []
+			latlongs.append(startlat)
+			latlongs.append(startlong)
+			latlongs.append(endlat)
+			latlongs.append(endlong)
 			km = float(request.POST.get("km", ""))
 			dates = request.POST.get("date", "")
 			dates = dates.split(", ")
@@ -135,6 +152,7 @@ def retrieveride(request,page_id=1):
 				if datereq == objects.date:
 					if time >= (datetime.datetime.combine(datetime.date(1,1,1),time) - dummyhalfhour).time() and \
 					time <= (datetime.datetime.combine(datetime.date(1,1,1),time) + timereq + dummyhalfhour).time():
+						objects.route.timereq = objects.route.timereq/60
 						finalresult1.append(objects)
 			cache.set(keystring_hash, finalresult1, 3600)
 			cache.set('recentridesearched', keystring_hash, 3600)
@@ -143,9 +161,11 @@ def retrieveride(request,page_id=1):
 			print "cache is being used for " + keystring_hash
 	page_id = int(page_id)
 	ridereq = cache.get('recentridesearched')
+	global latlongs
+	print latlongs
 	if len(cache.get(ridereq)) % 3 == 0:
 		pages = len(cache.get(ridereq))/3
 	else:
 		pages = len(cache.get(ridereq))/3 + 1
-	context = {'results': cache.get(ridereq)[(page_id - 1)*3:(page_id - 1)*3 + 3], 'pagerange': [x+1 for x in range(0,pages)], 'current': page_id}
+	context = {'results': cache.get(ridereq)[(page_id - 1)*3:(page_id - 1)*1 + 3], 'pagerange': [x+1 for x in range(0,pages)], 'current': page_id, 'userdata': latlongs}
 	return render(request, 'routes/showrides.html', context)

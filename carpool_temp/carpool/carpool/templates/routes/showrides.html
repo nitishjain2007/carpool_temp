@@ -12,14 +12,191 @@
 	<link rel="stylesheet" href="{% static "routes/css/jquery-ui.min.css" %}">
 	<link rel="stylesheet" href="{% static "routes/css/jquery-ui.theme.min.css" %}">
 	<link rel="stylesheet" href="{% static "routes/css/jquery.ui.timepicker.css" %}">
+	<style>
+		.selected{
+			background-color: orange;
+		}
+	</style>
+	<script>
+		var map;
+		var tempmarkers = [];
+		var temppoly = "";
+		function showinitialmap(){
+			markers = [
+	            {
+	                "title": 'Start Point',
+	                "lat": '{{ userdata.0 }}',
+	                "lng": '{{ userdata.1 }}'
+	            }
+	        ,
+	            {
+	                "title": 'End Point',
+	                "lat": '{{ userdata.2 }}',
+	                "lng": '{{ userdata.3 }}'
+	            }
+    		];
+    		var mapOptions = {
+	            center: new google.maps.LatLng(markers[0].lat, markers[0].lng),
+	            zoom: 10,
+	            mapTypeId: google.maps.MapTypeId.ROADMAP
+	        };
+	        map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+	        var infoWindow = new google.maps.InfoWindow();
+	        var lat_lng = new Array();
+	        var latlngbounds = new google.maps.LatLngBounds();
+	        for (i = 0; i < markers.length; i++) {
+	            var data = markers[i]
+	            var myLatlng = new google.maps.LatLng(data.lat, data.lng);
+	            lat_lng.push(myLatlng);
+	            var marker = new google.maps.Marker({
+	                position: myLatlng,
+	                map: map,
+	                title: data.title
+	            });
+	            latlngbounds.extend(marker.position);
+	            (function (marker, data) {
+	                google.maps.event.addListener(marker, "click", function (e) {
+	                    infoWindow.setContent(data.description);
+	                    infoWindow.open(map, marker);
+	                });
+	            })(marker, data);
+	        }
+	        map.setCenter(latlngbounds.getCenter());
+	        map.fitBounds(latlngbounds);
+
+	        //***********ROUTING****************//
+ 
+	        //Initialize the Path Array
+	        var path = new google.maps.MVCArray();
+	        //Initialize the Direction Service
+	        var service = new google.maps.DirectionsService();
+	        //Set the Path Stroke Color
+	        var poly = new google.maps.Polyline({ map: map, strokeColor: '#4986E7' });
+	        //Loop and Draw Path Route between the Points on MAP
+	        for (var i = 0; i < lat_lng.length; i++) {
+	            if ((i + 1) < lat_lng.length) {
+	                var src = lat_lng[i];
+	                var des = lat_lng[i + 1];
+	                path.push(src);
+	                poly.setPath(path);
+	                service.route({
+	                    origin: src,
+	                    destination: des,
+	                    travelMode: google.maps.DirectionsTravelMode.DRIVING
+	                }, function (result, status) {
+	                    if (status == google.maps.DirectionsStatus.OK) {
+	                        for (var i = 0, len = result.routes[0].overview_path.length; i < len; i++) {
+	                            path.push(result.routes[0].overview_path[i]);
+	                        }
+	                    }
+	                });
+	            }
+	        }
+		}
+		function showroute(id){
+			tempmarkers = [];
+			temppoly = "";
+			var hovered = '#' + id;
+			$(hovered).addClass('selected');
+			var markers1 = [
+	            {
+	                "title": 'Start Point',
+	                "lat": document.getElementById(id + "startlat").value,
+	                "lng": document.getElementById(id + "startlong").value
+	            }
+	        ,
+	            {
+	                "title": 'End Point',
+	                "lat": document.getElementById(id + "endlat").value,
+	                "lng": document.getElementById(id + "endlong").value
+	            }
+    		];
+    		var markericon = "{% static "routes/css/images/marker.png" %}";
+    		var infoWindow = new google.maps.InfoWindow();
+	        var lat_lng = new Array();
+	        var latlngbounds = new google.maps.LatLngBounds();
+	        for (i = 0; i < markers1.length; i++) {
+	            var data = markers1[i]
+	            var myLatlng = new google.maps.LatLng(data.lat, data.lng);
+	            lat_lng.push(myLatlng);
+	            var marker = new google.maps.Marker({
+	                position: myLatlng,
+	                map: map,
+	                title: data.title,
+	                icon: markericon
+	            });
+	            latlngbounds.extend(marker.position);
+	            (function (marker, data) {
+	                google.maps.event.addListener(marker, "click", function (e) {
+	                    infoWindow.setContent(data.description);
+	                    infoWindow.open(map, marker);
+	                });
+	            })(marker, data);
+	            tempmarkers.push(marker);
+	        }
+	        //***********ROUTING****************//
+ 
+	        //Initialize the Path Array
+	        var path = new google.maps.MVCArray();
+	        //Initialize the Direction Service
+	        var service = new google.maps.DirectionsService();
+	        //Set the Path Stroke Color
+	        temppoly = new google.maps.Polyline({ map: map, strokeColor: '#DA70D6' });
+	        //Loop and Draw Path Route between the Points on MAP
+	        for (var i = 0; i < lat_lng.length; i++) {
+	            if ((i + 1) < lat_lng.length) {
+	                var src = lat_lng[i];
+	                var des = lat_lng[i + 1];
+	                path.push(src);
+	                temppoly.setPath(path);
+	                service.route({
+	                    origin: src,
+	                    destination: des,
+	                    travelMode: google.maps.DirectionsTravelMode.DRIVING
+	                }, function (result, status) {
+	                    if (status == google.maps.DirectionsStatus.OK) {
+	                        for (var i = 0, len = result.routes[0].overview_path.length; i < len; i++) {
+	                            path.push(result.routes[0].overview_path[i]);
+	                        }
+	                    }
+	                });
+	            }
+	        }
+		}
+		function getpage(pageid){
+			urlreq = "{% url 'routes:retrieverequiredrides' %}" + "?page=" + pageid;
+			$("#container").load(urlreq);
+		}
+		function hideroute(id){
+			var hovered = '#' + id;
+			$(hovered).removeClass('selected');
+			for(var i=0; i < tempmarkers.length; i++){
+				tempmarkers[i].setMap(null);
+			}
+			temppoly.setMap(null);
+			console.log(id);
+		}
+		window.onload = showinitialmap;
+	</script>
 </head>
 <body>
+<div id="map_canvas" style="width:700px; height:500px; border: 5px solid #000;"></div>
+<div id="container">
 {% for objects in results %}
-{{ objects.user.first_name }}
+<div id="{{ objects.id }}" style="width:700px; height:50px; border: 2px solid #000;" onmouseover="showroute(this.id)" onmouseout="hideroute(this.id)" class="normalride">
+Ride posted by {{ objects.user.first_name }}
+<br>
+Ride starts at {{ objects.date }} at {{ objects.time }} and would be {{ objects.route.timereq }} minutes long
+<input type="hidden" value="{{ objects.route.startlat }}" id="{{ objects.id }}startlat" />
+<input type="hidden" value="{{ objects.route.startlong }}" id="{{ objects.id }}startlong" />
+<input type="hidden" value="{{ objects.route.endlat }}" id="{{ objects.id }}endlat" />
+<input type="hidden" value="{{ objects.route.endlong }}" id="{{ objects.id }}endlong" />
+</div>
 <br>
 {% endfor %}
+</div>
 {% for i in pagerange %}
-<a href="{% url 'routes:retrieveride' i %}">{{ i }}</a>
+<a onclick="getpage('{{ i }}')">{{ i }}</a>
 {% endfor %}
 </body>
 </html>

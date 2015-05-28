@@ -8,3 +8,4 @@ class Extendeduser(models.Model):
 	mobile_no = models.CharField(max_length=255)
 	address = models.TextField()
 	user = models.ForeignKey(User)
+	email_verified = models.BooleanField()

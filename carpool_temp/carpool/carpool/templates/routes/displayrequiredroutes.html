@@ -1,0 +1,13 @@
+{% for objects in results %}
+<div id="{{ objects.id }}" style="width:700px; height:50px; border: 2px solid #000;" onmouseover="showroute(this.id)" onmouseout="hideroute(this.id)" class="normalride">
+Ride posted by {{ objects.user.first_name }}
+<br>
+Ride starts at {{ objects.date }} at {{ objects.time }} and would be {{ objects.route.timereq }} minutes long
+<input type="hidden" value="{{ objects.route.startlat }}" id="{{ objects.id }}startlat" />
+<input type="hidden" value="{{ objects.route.startlong }}" id="{{ objects.id }}startlong" />
+<input type="hidden" value="{{ objects.route.endlat }}" id="{{ objects.id }}endlat" />
+<input type="hidden" value="{{ objects.route.endlong }}" id="{{ objects.id }}endlong" />
+</div>
+</div>
+<br>
+{% endfor %}

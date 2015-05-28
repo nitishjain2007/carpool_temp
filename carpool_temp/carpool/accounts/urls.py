@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^home/', views.home, name='home'),
     url(r'^authenticateuser/', views.authenticateuser, name='authenticateuser'),
     url(r'^registeruser/', views.registeruser, name='registeruser'),
+    url(r'^send_email/', views.send_email, name='send_email'),
 ]

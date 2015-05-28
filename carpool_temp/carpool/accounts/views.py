@@ -5,18 +5,38 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail, BadHeaderError
 
 # Create your views here.
-def login(request):
+def login(request, path=None):
 	return render(request, 'accounts/signin.html')
+
+def send_email(request):
+	subject = "Test Mail"
+	message = "Hi this is a test mail... Please ignore"
+	from_email = "contact@spa.com"
+	if subject and message and from_email:
+		try:
+			send_mail(subject, message, from_email, ['spamailserver@gmail.com'])
+		except BadHeaderError:
+			return HttpResponse('Invalid header found.')
+		return HttpResponseRedirect('/contact/thanks/')
+	else:
+		# In reality we'd use a form class
+		# to get proper validation errors.
+		return HttpResponse('Make sure all fields are entered and valid.')
 
 def authenticateuser(request):
 	email = request.POST.get("email", "")
 	password = request.POST.get("password", "")
+	redirecturl = request.POST.get("redirecturl", "")
 	user = authenticate(username = email, password = password)
 	if user is not None:
 		auth_login(request, user)
-		return redirect('/accounts/home')
+		if redirecturl == "":
+			return redirect('/accounts/home')
+		else:
+			return redirect(redirecturl)
 	else:
 		return redirect('/accounts/login')
 

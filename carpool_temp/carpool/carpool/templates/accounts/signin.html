@@ -4,12 +4,26 @@
 <head>
 	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places"></script>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script>
+	function geturl(){
+		var url = document.URL;
+		url = url.split("?");
+		if(url.length > 1){
+			url = url[1];
+			url = url.split("=")[1];
+			document.getElementById("redirecturl").value = url;
+		}
+	}
+	window.onload = geturl;
+	</script>
+
 </head>
 <body>
 <form action="{% url 'accounts:authenticateuser' %}" method="post">
 	{% csrf_token %}
 	<input type="text" name="email" placeholder="Email Id" />
 	<input type="password" name="password" placeholder="Password" />
+	<input type="hidden" name="redirecturl" value="" id="redirecturl"/>
 	<input type="submit" value="Sign In" />
 </form>
 <br>
