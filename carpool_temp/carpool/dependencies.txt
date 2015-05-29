@@ -1,1 +1,2 @@
 pip install python-social-auth
+pip install pillow (for imagefield in models)

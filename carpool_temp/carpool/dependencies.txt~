@@ -1,2 +1,1 @@
 pip install python-social-auth
-pip install django-mathfilters
