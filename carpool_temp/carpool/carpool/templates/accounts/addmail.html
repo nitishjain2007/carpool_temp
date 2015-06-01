@@ -2,25 +2,12 @@
 <html>
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-<script>
-	function checkmail(){
-		email = document.getElementById("mailholder").value;
-		var urlreq = "{% url 'accounts:checkifvalidmail' %}" + email + "/";
-		var request = $.ajax({
-			url: urlreq
-		});
-
-		request.done(function( msg ) {
-			console.log(msg);
-		});
-	}
-</script>
 </head>
 <body>
 	Hi {{ request.user.first_name }} Please provide your email_id to complete your verification process:
 	<form action="{% url 'accounts:addmail' %}" method="post">
 	{% csrf_token %}
-	<input type="text" name="email" placeholder="Email Id" id="mailholder" onblur="checkmail()" />
+	<input type="text" name="email" placeholder="Email Id" id="mailholder" />
 	<input type="submit" value="Submit" />
 	</form>
 </body>

@@ -1,5 +1,6 @@
 from django import forms
 
 class Extendeduserform(forms.Form):
-	image = forms.ImageField(label="Profile Pic")
-	phoneno = forms.CharField(label="Phone No", max_length=100)
+    file = forms.FileField()
+    phone = forms.CharField(label='Phoneno', max_length=100)
+    adress = forms.CharField(label='Adress', max_length=100)

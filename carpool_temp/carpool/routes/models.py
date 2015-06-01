@@ -21,3 +21,18 @@ class Pools(models.Model):
 	route = models.ForeignKey(Route)
 	route_reverse = models.BooleanField()
 	user = models.ForeignKey(User)
+
+class Riderequest(models.Model):
+	time = models.TimeField()
+	date = models.DateField()
+	startlat = models.DecimalField(max_digits=15, decimal_places=12)
+	endlat = models.DecimalField(max_digits=15, decimal_places=12)
+	startlong = models.DecimalField(max_digits=15, decimal_places=12)
+	endlong = models.DecimalField(max_digits=15, decimal_places=12)
+	user = models.ForeignKey(User)
+	accepted = models.BooleanField()
+
+class Invites(models.Model):
+	pool = models.ForeignKey(Pools)
+	riderequest = models.ForeignKey(Riderequest)
+	is_from_driver = models.BooleanField()

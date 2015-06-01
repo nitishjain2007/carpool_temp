@@ -1,7 +1,9 @@
+''' THE CONTROLLER FOR THE POOLS AND ROUTES '''
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect, HttpResponse
 from django.template import RequestContext, loader, Context
 from django.core.urlresolvers import reverse
+from django.views.generic import View
 from django.core.cache import cache
 from .models import Pools, Route
 from django.contrib.auth.models import User
@@ -10,64 +12,91 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 import socket
 import hashlib
 import datetime
-# Create your views here.
 
+
+
+
+##################################################################################################################################################################
+################################### THE APP CONTROLS ALL OF THE FUNCTIONS THAT DEAL WITH THE CRUD OF THE USER POOLS AND RIDES ####################################
+##################################################################################################################################################################
+
+
+
+#the global variable for storing the lat longs if the user chooses to refresh the page...
 latlongs = []
-@login_required
-def dummy(request):
-	return HttpResponse(request.user)
 
+
+#the function for displaying the initial page for posting a carpool
 @login_required
 def postride(request):
 	return render(request, 'routes/postride.html')
 
 @login_required
-def createride(request):
-	startlat = float(request.POST.get("startlat", ""))
-	startlong = float(request.POST.get("startlong", ""))
-	endlat = float(request.POST.get("endlat", ""))
-	endlong = float(request.POST.get("endlong", ""))
-	minlat = float(request.POST.get("minlat", ""))
-	maxlat = float(request.POST.get("maxlat", ""))
-	minlong = float(request.POST.get("minlong", ""))
-	maxlong = float(request.POST.get("maxlong", ""))
-	timereq = int(request.POST.get("timereq", ""))
-	latstr = request.POST.get("latstr", "")
-	latstr = latstr[1:]
-	longstr = request.POST.get("longstr", "")
-	longstr = longstr[1:]
-	dates = request.POST.get("date", "")
-	dates = dates.split(", ")
-	time = request.POST.get("time", "")
-	time = datetime.datetime.strptime(time, '%H:%M').time()
-	user = request.user
-	try:
-		p = Route.objects.get(endlat__range = (endlat - 0.0000000001, endlat + 0.0000000001), startlat__range = (startlat - 0.0000000001, startlat + 0.0000000001), endlong__range = (endlong - 0.0000000001, endlong + 0.0000000001), startlong__range = (startlong - 0.0000000001, startlong + 0.0000000001))
-		route = p
-		route_reverse = False
-	except Route.DoesNotExist:
-		try:
-			p = Route.objects.get(startlat__range = (endlat - 0.0000000001, endlat + 0.0000000001), endlat__range = (startlat - 0.0000000001, startlat + 0.0000000001), startlong__range = (endlong - 0.0000000001, endlong + 0.0000000001), endlong__range = (startlong - 0.0000000001, startlong + 0.0000000001))
-			route = p
-			route_reverse = True
-		except Route.DoesNotExist:
-			p = Route(lats = latstr, longs = longstr, startlat = startlat, endlat = endlat, startlong = startlong, endlong = endlong, minlat = minlat, maxlat = maxlat, minlong = minlong, maxlong = maxlong, timereq = timereq)
-			p.save()
-			routeid = p
-			route_reverse = False
-	for date in dates:
-		datereq = date[:6] + date[8:]
-		datereq = datetime.datetime.strptime(datereq, '%m/%d/%y').date()
-		q = Pools(time = time, date = datereq, route = p, user = user, route_reverse = route_reverse)
-		q.save()
-	return HttpResponse(type(startlat))
+class createride(View):
+	def retrievedata(self, request):
+		startlat = float(request.POST.get("startlat", ""))
+		startlong = float(request.POST.get("startlong", ""))
+		endlat = float(request.POST.get("endlat", ""))
+		endlong = float(request.POST.get("endlong", ""))
+		minlat = float(request.POST.get("minlat", ""))
+		maxlat = float(request.POST.get("maxlat", ""))
+		minlong = float(request.POST.get("minlong", ""))
+		maxlong = float(request.POST.get("maxlong", ""))
+		timereq = int(request.POST.get("timereq", ""))
+		latstr = request.POST.get("latstr", "")
+		latstr = latstr[1:]
+		longstr = request.POST.get("longstr", "")
+		longstr = longstr[1:]
+		dates = request.POST.get("date", "")
+		dates = dates.split(", ")
+		time = request.POST.get("time", "")
+		time = datetime.datetime.strptime(time, '%H:%M').time()
+		user = request.user
+		data = {'startlat': startlat, 'startlong': startlong, 'endlat': endlat, 'endlong': endlong, 'minlat': minlat, 'minlong': minlong, 'timereq': timereq, 'latstr': latstr, 'longstr': longstr, 'dates': dates, 'time': time, 'user': user}
+		return data
 
+	def post(self, request, *args, **kwargs):
+		#retrieve the data collected from post variables
+		data = self.retrievedata(request)
+		#check if there exists a route already to the route that has to be inserted
+		try:
+			p = Route.objects.get(endlat__range = (data['endlat'] - 0.0000000001, data['endlat'] + 0.0000000001), startlat__range = (data['startlat'] - 0.0000000001, data['startlat'] + 0.0000000001), endlong__range = (data['endlong'] - 0.0000000001, data['endlong'] + 0.0000000001), startlong__range = (data['startlong'] - 0.0000000001, data['startlong'] + 0.0000000001))
+			#on success assign the route to the route object recieved
+			route = p
+			route_reverse = False
+		except Route.DoesNotExist:
+			try:
+				#check if the route exists in reverse order
+				#eg if your route is A->B, check if B->A exists
+				p = Route.objects.get(startlat__range = (data['endlat'] - 0.0000000001, data['endlat'] + 0.0000000001), endlat__range = (data['startlat'] - 0.0000000001, data['startlat'] + 0.0000000001), startlong__range = (data['endlong'] - 0.0000000001, data['endlong'] + 0.0000000001), endlong__range = (data['startlong'] - 0.0000000001, data['startlong'] + 0.0000000001))
+				route = p
+				#mark the route as reversed
+				route_reverse = True
+			except Route.DoesNotExist:
+				#if the route does not exist either in reversed or non reversed form, create the route
+				p = Route(lats = data['latstr'], longs = data['longstr'], startlat = data['startlat'], endlat = data['endlat'], startlong = data['startlong'], endlong = data['endlong'], minlat = data['minlat'], maxlat = data['maxlat'], minlong = data['minlong'], maxlong = data['maxlong'], timereq = data['timereq'])
+				p.save()
+				routeid = p
+				route_reverse = False
+		for date in data['dates']:
+			#for each of the date, create a carpool..
+			datereq = date[:6] + date[8:]
+			datereq = datetime.datetime.strptime(datereq, '%m/%d/%y').date()
+			q = Pools(time = data['time'], date = datereq, route = p, user = data['user'], route_reverse = route_reverse)
+			q.save()
+		return HttpResponse(type(startlat))
+
+
+#the function for displaying the initial page for searching a carpool
 @login_required
 def getride(request):
 	return render(request, 'routes/getride.html')
 
+#this function displays the data through ajax .load function in pagenation
+@login_required
 @ensure_csrf_cookie
 def retrieverequiredrides(request):
+	#get the page id that has been requested
 	page_id = int(request.GET.get("page", ""))
 	print page_id
 	ridereq = cache.get('recentridesearched')
@@ -77,6 +106,7 @@ def retrieverequiredrides(request):
 
 @login_required
 def retrieveride(request,page_id=1):
+	#get the ip address of the user (used for caching the user data for avoiding multiple database hits)
 	ip = [(s.connect(('8.8.8.8', 80)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
 	if "startlat" in request.POST:
 		keystring = ip + request.POST.get("startlat", "") + request.POST.get("startlong", "") + request.POST.get("endlat", "") + request.POST.get("endlong", "") + request.POST.get("date", "") + request.POST.get("time", "")[:4] + "ridesearch"
