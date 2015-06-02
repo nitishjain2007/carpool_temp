@@ -34,5 +34,6 @@ class Riderequest(models.Model):
 
 class Invites(models.Model):
 	pool = models.ForeignKey(Pools)
+	hashstring = models.CharField(max_length=255)
 	riderequest = models.ForeignKey(Riderequest)
 	is_from_driver = models.BooleanField()

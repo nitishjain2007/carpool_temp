@@ -164,6 +164,7 @@
 	        }
 		}
 		function getpage(pageid){
+			alert("i'm called");
 			urlreq = "{% url 'routes:retrieverequiredrides' %}" + "?page=" + pageid;
 			$("#container").load(urlreq);
 		}
@@ -176,6 +177,27 @@
 			temppoly.setMap(null);
 			console.log(id);
 		}
+		function sendrequest(id){
+			userid = id.substr(7);
+			urlreq = "{% url 'routes:sendinvitetopool' %}" + "?poolid=" + userid;
+			alert("called");
+			$.ajax({
+				url: urlreq
+			})
+			.done(function(msg){
+				alert("Your mail has been sent")
+			});
+		}
+		function requestride(){
+			$.ajax({
+				url: "{% url 'routes:makerequestride' %}"
+			})
+			.done(function(msg){
+				alert("hi")
+				urlreq = "{% url 'routes:retrieverequiredrides' %}" + "?page=1";
+				$("#container").load(urlreq);
+			});
+		}
 		window.onload = showinitialmap;
 	</script>
 </head>
@@ -183,7 +205,7 @@
 <div id="map_canvas" style="width:700px; height:500px; border: 5px solid #000;"></div>
 <div id="container">
 {% for objects in results %}
-<div id="{{ objects.id }}" style="width:700px; height:50px; border: 2px solid #000;" onmouseover="showroute(this.id)" onmouseout="hideroute(this.id)" class="normalride">
+<div id="{{ objects.id }}" style="width:700px; height:70px; border: 2px solid #000;" onmouseover="showroute(this.id)" onmouseout="hideroute(this.id)" class="normalride">
 Ride posted by {{ objects.user.first_name }}
 <br>
 Ride starts at {{ objects.date }} at {{ objects.time }} and would be {{ objects.route.timereq }} minutes long
@@ -191,6 +213,9 @@ Ride starts at {{ objects.date }} at {{ objects.time }} and would be {{ objects.
 <input type="hidden" value="{{ objects.route.startlong }}" id="{{ objects.id }}startlong" />
 <input type="hidden" value="{{ objects.route.endlat }}" id="{{ objects.id }}endlat" />
 <input type="hidden" value="{{ objects.route.endlong }}" id="{{ objects.id }}endlong" />
+{% if requestride == True %}
+<button type="button" onclick="sendrequest(this.id)" id="request{{ objects.id }}">Send him a request</button>
+{% endif %}
 </div>
 <br>
 {% endfor %}
@@ -198,5 +223,6 @@ Ride starts at {{ objects.date }} at {{ objects.time }} and would be {{ objects.
 {% for i in pagerange %}
 <a onclick="getpage('{{ i }}')">{{ i }}</a>
 {% endfor %}
+<button onclick="requestride()" type="button">Request a ride</button>
 </body>
 </html>
